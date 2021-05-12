@@ -1,5 +1,4 @@
-// Name : Raj Trivedi
-// Partner Name: Lisa Pathania
+// Name : Raj Trivedi, Lisa Pathania
 
 //Simple optimized box blur
 //by: Greg Silber
@@ -128,10 +127,6 @@ int main(int argc,char** argv){
     uint8_t *img;            // Array of bytes for src image on CPU and GPU(Unified Memory)	   
     float *dest, *mid;       // Array of float values of destination image on CPU
     
-    /* GAUSS.JPG DIMENSION
-       2890 columns X 3028 rows
-    */   
-
     if (argc!=3)
         return Usage(argv[0]);
     filename=argv[1];
@@ -149,60 +144,37 @@ int main(int argc,char** argv){
     // Number of blocks to be used for computeColumn(...) function
     num_blocks_col = (pWidth  + (BLOCK_SIZE - 1) ) / BLOCK_SIZE; // 34
 
-    // Allocates space for devImg array on device(GPU)
     // Unified Memory which means accessible from both GPU and CPU
-    cudaMallocManaged(&img, sizeof(uint8_t) * pWidth * height);
-
-
-    // Allocates space for devMid and devDest arrays on device
-    // Unified Memory which means accessibly from both GPU and CPU 
+    cudaMallocManaged(&img,     sizeof(uint8_t) * pWidth * height);
     cudaMallocManaged(&mid,     sizeof(float)   * pWidth * height);
-
     cudaMallocManaged(&dest,    sizeof(float)   * pWidth * height);
 
-
-    // Start the timer for parallelization
     t1 = clock();
 
-    // Invoke kernel code for computeColumn(...)
-    // num_blocks_col = 34
-    // BLOCK_SIZE     = 256 
     computeColumn<<< num_blocks_col, BLOCK_SIZE >>>(img, mid, pWidth, height, radius, bpp);
     
     // Wait for compute device to finish
     cudaDeviceSynchronize();
 
-    // Invoke Kernel code for computeRow(...)
-    // num_blocks_row = 12
-    // BLOCK_SIZE     = 256
     computeRow<<< num_blocks_row, BLOCK_SIZE >>>(mid, dest, pWidth, height, radius, bpp);
 
     cudaDeviceSynchronize();
 
-    // End the timer for parallelization
     t2 = clock(); 
 
-/*
-    // Done with src image on CPU
-    stbi_image_free(img);
-*/
-
-    // Now back to uint8_t and save the image
-//  img = (uint8_t *) malloc( sizeof(uint8_t) * pWidth * height);
+   // Now back to uint8_t and save the image
+   // img = (uint8_t *) malloc( sizeof(uint8_t) * pWidth * height);
     for (i = 0 ; i < pWidth * height ; i++){    
         img[i] = (uint8_t) dest[i];
     }
 
     // Write all bytes of final image to "output.png"
     stbi_write_png("output.png",width,height,bpp,img,bpp*width);
-    
+
     // Frees allocated space from device(GPU)
     cudaFree(img);
     cudaFree(mid);
     cudaFree(dest);
-
-    // Done with src image on CPU
-    stbi_image_free(img);
 
     // Check how much time it took parallelizing serialized version
     printf("Blur with radius %d complete in %lf seconds\n",radius, (double) (t2-t1) / (double) CLOCKS_PER_SEC);
