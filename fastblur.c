@@ -104,7 +104,7 @@ int main(int argc,char** argv){
     mid=malloc(sizeof(float)*pWidth*height);   
     dest=malloc(sizeof(float)*pWidth*height);   
 
-    t1=time(NULL);
+    t1 = clock();
     for (i=0;i<pWidth;i++){
          computeColumn(img,mid,i,pWidth,height,radius,bpp);
     }  
@@ -112,7 +112,7 @@ int main(int argc,char** argv){
     for (i=0;i<height;i++){
         computeRow(mid,dest,i,pWidth,radius,bpp);
     }
-    t2=time(NULL);
+    t2 = clock();
     free(mid); //done with mid
 
     //now back to int8 so we can save it
@@ -123,5 +123,5 @@ int main(int argc,char** argv){
     free(dest);   
     stbi_write_png("output.png",width,height,bpp,img,bpp*width);
     free(img);
-    printf("Blur with radius %d complete in %ld seconds\n",radius,t2-t1);
+    printf("Blur with radius %d complete in %lf seconds\n",radius, (double) (t2-t1) / (double) CLOCKS_PER_SEC);
 }
